@@ -1,0 +1,1 @@
+# IA-Solucionadora-de-Cubo-Magico
