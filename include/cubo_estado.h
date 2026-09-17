@@ -55,10 +55,10 @@ void estado_mov_frt_inv(EstadoCubo *estado);
 void estado_mov_trs(EstadoCubo *estado);
 void estado_mov_trs_inv(EstadoCubo *estado);
 
-void aplicar_movimento(EstadoCubo *estado, MovimentoCubo movimento);
+void estado_aplicar_movimento(EstadoCubo *estado, MovimentoCubo movimento);
 
 int estado_igual(const EstadoCubo *a, const EstadoCubo *b);
 
-int estado_gerar_sucessores(const EstadoCubo *estado, SucessorCubo *sucessores[TOTAL_MOVIMENTOS]);
+void estado_gerar_sucessores(const EstadoCubo *estado, SucessorCubo sucessores[TOTAL_MOVIMENTOS]);
 
 #endif

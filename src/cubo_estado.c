@@ -248,7 +248,7 @@ static const MovimentoCubo movimentos[TOTAL_MOVIMENTOS] = {
 };
 
 //Função Sucessora: Gera todos os sucessores de um estado do cubo
-void estado_gerar_sucessores(const EstadoCubo *estado, SucessorCubo *sucessores[TOTAL_MOVIMENTOS]){
+void estado_gerar_sucessores(const EstadoCubo *estado, SucessorCubo sucessores[TOTAL_MOVIMENTOS]){
     
     for(int i = 0; i < TOTAL_MOVIMENTOS; i++){
         sucessores[i].estado = *estado; // Copia o estado atual
