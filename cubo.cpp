@@ -1,5 +1,10 @@
+#include "cubo_visual.h"
 #include <GLFW/glfw3.h>
-#include <GL/gl.h>
+#ifdef __APPLE__
+    #include <OpenGL/gl.h>
+#else
+    #include <GL/gl.h>
+#endif
 #include <cmath>
 #include <vector>
 #include <algorithm>
@@ -148,13 +153,21 @@ void drawSubCube() {
     glEnd();
 }
 
-int main() {
+void abrir_jogo_manual() {
     inicializarCubo();
 
-    if (!glfwInit()) return -1;
+    if (!glfwInit()) 
+    {
+        return;
+    }
 
     GLFWwindow* window = glfwCreateWindow(800, 600, "Cubo Animado - R, E, F, D", NULL, NULL);
-    if (!window) { glfwTerminate(); return -1; }
+    
+    if (!window)
+    { 
+        glfwTerminate(); 
+        return; 
+    }
 
     glfwMakeContextCurrent(window);
     
@@ -224,5 +237,4 @@ int main() {
 
     glfwDestroyWindow(window);
     glfwTerminate();
-    return 0;
 }
