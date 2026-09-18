@@ -1,5 +1,5 @@
-#ifndef BIBLIOFILAEPILHA_H_INCLUDED
-#define BIBLIOFILAEPILHA_H_INCLUDED
+#ifndef BIBLIOTECA_FILA_PILHA_H_INCLUDED
+#define BIBLIOTECA_FILA_PILHA_H_INCLUDED
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -28,21 +28,46 @@ Pilha* CriaPilha(void)
 {
     Pilha *p;
     p = (Pilha*)malloc(sizeof(Pilha));
+
+    if(p==NULL){
+        return NULL;
+    }
+
     p->Topo = NULL;
     return p;
 }
 
-No* ins_ini(No* t, int a)
+No* ins_ini(No* t, NoBusca *A)
 {
     No* aux = (No*)malloc(sizeof(No));
-    aux->info = a;
+    //verifica se alocou espaço
+    if(aux == NULL){
+        return NULL;
+    }
+    aux->info = A;
     aux->prox = t;
     return aux;
 }
 
-void Push(Pilha* p, int v)
+int vaziaPilha(Pilha *p)
 {
-    p->Topo = ins_ini(p->Topo, v);
+    if(p->Topo == NULL)
+    {
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
+}
+
+void Push(Pilha* p, NoBusca *v)
+{
+    No *novo = ins_ini(p->Topo, v);
+
+    if(novo != NULL){
+        p->Topo = novo;
+    }
 }
 
 No* ret_ini(No* aux)
@@ -52,9 +77,9 @@ No* ret_ini(No* aux)
     return p;
 }
 
-int Pop(Pilha* p)
+NoBusca* Pop(Pilha* p)
 {
-    int v;
+    NoBusca *v;
 
     if(vaziaPilha(p) == 1)
     {
@@ -70,12 +95,6 @@ int Pop(Pilha* p)
 
 Pilha* liberaPilha(Pilha* p)
 {
-    if(vaziaPilha(p) == 1)
-    {
-        printf("A Pilha ja esta Vazia");
-        exit(1);
-    }
-
     No* aux;
     aux = p->Topo;
 
@@ -109,17 +128,7 @@ void Imprime(Pilha* p)
     printf("\n");
 }
 
-int vaziaPilha(Pilha *p)
-{
-    if(p->Topo == NULL)
-    {
-        return 1;
-    }
-    else
-    {
-        return 0;
-    }
-}
+
 
 typedef struct fila
 {
@@ -138,6 +147,11 @@ int VaziaFila(Fila* f)
 Fila* CriaFila()
 {
     Fila* f = (Fila*)malloc(sizeof(Fila));
+
+    if(f == NULL){
+        return NULL;
+    }
+
     f->ini = f->fim = NULL;
     return f;
 }
@@ -155,12 +169,21 @@ No* ins_fim(No *fim, NoBusca *A)
     return p;
 }
 
-void InsereFila(Fila* f, NoBusca *v)
+int InsereFila(Fila* f, NoBusca *v)
 {
-    f->fim = ins_fim(f->fim, v);
+    No *novo = ins_fim(f->fim, v);
 
-    if(f->ini == NULL)
+    if(novo == NULL){
+        return 0;
+    }
+
+    f->fim = novo;
+
+    if(f->ini == NULL){
         f->ini = f->fim;
+    }
+
+    return 1;
 }
 
 No* retira_ini(No* ini)
