@@ -5,6 +5,52 @@
 #include <time.h>
 // #include "bibliofilaepilha.h"
 #include "cubo_visual.h"
+#include "busca_bfs.h"
+
+const char *nome_movimento(MovimentoCubo movimento)
+{
+    switch (movimento)
+    {
+        case MOV_DIR:
+            return "DIR"; /* direita */
+
+        case MOV_DIR_INV:
+            return "DIR_INV"; /* gira a face direita no sentido ao contrario*/
+
+        case MOV_ESQ:
+            return "ESQ"; /* esquerda */
+
+        case MOV_ESQ_INV:
+            return "ESQ_INV"; /* gira a face esquerda no sentido contrario */
+
+        case MOV_SUP:
+            return "SUP"; /* gira a face de cima */
+
+        case MOV_SUP_INV:
+            return "SUP_INV"; /* gira a face de cima no sentido contrario */
+
+        case MOV_INF:
+            return "INF"; /* gira a face de baixo */
+
+        case MOV_INF_INV:
+            return "INF_INV"; /* gira a face de baixo no sentido contrario */
+
+        case MOV_FRT:
+            return "FRT"; /* gira a face da frente */
+
+        case MOV_FRT_INV:
+            return "FRT_INV"; /* gira a face da frente no sentido contrario */
+
+        case MOV_TRS:
+            return "TRS"; /* gira a face de tras */
+
+        case MOV_TRS_INV:
+            return "TRS_INV"; /* gira a face de tras no sentido contrario */
+
+        default:
+            return "DESCONHECIDO";
+    }
+}
 
 int main()
 {
@@ -50,7 +96,45 @@ int main()
                 break;
 
             case 2:
+                {
+                EstadoCubo cubo;
+
+                /* inicia o cubo resolvido */
+                estado_inicializar(&cubo);
+
+                /* embaralha o cubo para testar a BFS */
+                estado_aplicar_movimento(&cubo, MOV_DIR);
+                estado_aplicar_movimento(&cubo, MOV_SUP);
+                estado_aplicar_movimento(&cubo, MOV_FRT);
+
+                printf("\nIniciando Busca em Largura...\n");
+
+                /* chama a busca em largura */
+                ResultadoBusca resultado = busca_bfs(&cubo);
+
+                if (resultado.no_final != NULL)
+                {
+                    printf("\nSolucao encontrada!\n");
+                    printf("Estados analisados: %d\n",resultado.estados_visitados);
+
+                    MovimentoCubo caminho[20];
+
+                    int quantidade = busca_reconstruir_caminho( resultado.no_final,caminho,20);
+
+                    printf("Quantidade de movimentos: %d\n", quantidade);
+
+                    for (int i = 0; i < quantidade; i++)
+                    {
+                        printf("Movimento %d: %s\n",i + 1,nome_movimento(caminho[i]));
+                    }
+                }
+                else
+                {
+                    printf("\nNao foi encontrada uma solucao.\n");
+                }
+
                 break;
+            }
 
             case 3:
                 break;
