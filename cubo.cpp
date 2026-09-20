@@ -83,6 +83,32 @@ float anguloAtual = 0;
 std::vector<int> indicesGirando; 
 const float VELOCIDADE_GIRO = 320.0f; 
 
+// Traduz cada movimento logico da busca (MovimentoCubo) pros parametros que
+// a funcao iniciarGiro entende (eixo, camada, sinal). A ordem aqui segue
+// exatamente a ordem do enum MovimentoCubo em cubo_estado.h
+typedef struct 
+{
+    int eixo;      // 0 = X, 1 = Y, 2 = Z
+    float camada;  // qual metade do cubo gira: 1.0 ou -1.0
+    float sinal;   // sentido do giro: 1.0 ou -1.0
+} InfoMovimento;
+
+static const InfoMovimento tabela_movimentos[TOTAL_MOVIMENTOS] = 
+{
+    /* MOV_DIR     */ {0,  1.0f, -1.0f},
+    /* MOV_DIR_INV */ {0,  1.0f,  1.0f},
+    /* MOV_ESQ     */ {0, -1.0f,  1.0f},
+    /* MOV_ESQ_INV */ {0, -1.0f, -1.0f},
+    /* MOV_SUP     */ {1,  1.0f, -1.0f},
+    /* MOV_SUP_INV */ {1,  1.0f,  1.0f},
+    /* MOV_INF     */ {1, -1.0f,  1.0f},
+    /* MOV_INF_INV */ {1, -1.0f, -1.0f},
+    /* MOV_FRT     */ {2,  1.0f, -1.0f},
+    /* MOV_FRT_INV */ {2,  1.0f,  1.0f},
+    /* MOV_TRS     */ {2, -1.0f,  1.0f},
+    /* MOV_TRS_INV */ {2, -1.0f, -1.0f},
+};
+
 void iniciarGiro(int eixo, float camada, float sinal) { 
     if (girando) return; // Impede girar duas coisas ao mesmo tempo
     eixoGiro = eixo; valorCamada = camada; sinalGiro = sinal; anguloAtual = 0; girando = true;
@@ -137,6 +163,18 @@ void keyCallback(GLFWwindow* janela, int tecla, int scancode, int acao, int mods
         case GLFW_KEY_E: iniciarGiro(0, -1.0f, inv ? -1 :  1); break; // Esquerda (Eixo X negativo)
         case GLFW_KEY_F: iniciarGiro(1,  1.0f, inv ?  1 : -1); break; // Cima (Eixo Y positivo)
         case GLFW_KEY_D: iniciarGiro(1, -1.0f, inv ? -1 :  1); break; // Baixo (Eixo Y negativo)
+        case GLFW_KEY_C: iniciarGiro(2,  1.0f, inv ?  1 : -1); break; // Frente (Eixo Z positivo)
+        case GLFW_KEY_V: iniciarGiro(2, -1.0f, inv ? -1 :  1); break; // Tras (Eixo Z negativo)
+    }
+}
+
+// callback simplificado so pra fechar a janela com ESC, usado na tela
+// de visualizacao da solucao (que nao aceita comandos manuais)
+void keyCallbackSaida(GLFWwindow* janela, int tecla, int scancode, int acao, int mods) {
+    if (acao != GLFW_PRESS) return;
+
+    if (tecla == GLFW_KEY_ESCAPE) {
+        glfwSetWindowShouldClose(janela, true);
     }
 }
 
@@ -153,7 +191,9 @@ void drawSubCube() {
     glEnd();
 }
 
-void abrir_jogo_manual() {
+void abrir_jogo_manual() 
+{
+    girando = false;
     inicializarCubo();
 
     if (!glfwInit()) 
@@ -226,6 +266,147 @@ void abrir_jogo_manual() {
                 0,              0,              0,              1
             };
             glMultMatrixf(matrizGL); // Aplica a rotação do estado
+
+            drawSubCube();
+            glPopMatrix();
+        }
+
+        glfwSwapBuffers(window);
+        glfwPollEvents();
+    }
+
+    glfwDestroyWindow(window);
+    glfwTerminate();
+}
+
+void abrir_visualizacao_solucao(MovimentoCubo *embaralhamento, int quantidade_embaralhamento, MovimentoCubo *solucao, int quantidade_solucao)
+{
+    girando = false;
+    inicializarCubo();
+
+    if (!glfwInit())
+    {
+        return;
+    }
+
+    GLFWwindow* window = glfwCreateWindow(800, 600, "Cubo Magico 2x2x2 - Visualizacao da Solucao", NULL, NULL);
+
+    if (!window)
+    {
+        glfwTerminate();
+        return;
+    }
+
+    glfwMakeContextCurrent(window);
+
+    glfwSetMouseButtonCallback(window, mouseButtonCallback);
+    glfwSetCursorPosCallback(window, cursorPosCallback);
+    glfwSetKeyCallback(window, keyCallbackSaida);
+
+    glEnable(GL_DEPTH_TEST);
+
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    float aspect = 800.0f / 600.0f;
+    glFrustum(-aspect * 0.5f, aspect * 0.5f, -0.5f, 0.5f, 1.0f, 50.0f);
+    glMatrixMode(GL_MODELVIEW);
+
+    printf("\nAperte ESC a qualquer momento para fechar e voltar ao menu.\n");
+    printf("\nEmbaralhando...\n");
+
+    double tempoAnterior = glfwGetTime();
+
+    int indice = 0;
+    int total_movimentos = quantidade_embaralhamento + quantidade_solucao;
+
+    double proximoMovimentoEm = glfwGetTime() + 3.0;
+
+    // controla pra cada aviso ser impresso so uma vez, mesmo o laco rodando
+    // varias vezes por segundo
+    bool imprimiu_embaralhado = false;
+    bool imprimiu_iniciando_solucao = false;
+    bool imprimiu_resolvido = false;
+
+    while (!glfwWindowShouldClose(window)) {
+        double agora = glfwGetTime();
+        float dt = (float)(agora - tempoAnterior);
+        tempoAnterior = agora;
+
+        atualizarGiro(dt);
+
+        // assim que o ultimo giro do embaralhamento termina de verdade (!girando),
+        // avisa no terminal
+        if (!girando && indice == quantidade_embaralhamento && !imprimiu_embaralhado)
+        {
+            printf("\nCubo embaralhado!\n");
+            imprimiu_embaralhado = true;
+        }
+
+        // assim que o ultimo giro da solucao termina de verdade, avisa tambem
+        if (!girando && indice == total_movimentos && !imprimiu_resolvido)
+        {
+            printf("\nCubo resolvido!\n");
+            imprimiu_resolvido = true;
+        }
+
+        if (!girando && indice < total_movimentos && agora >= proximoMovimentoEm)
+        {
+            if (indice == quantidade_embaralhamento && !imprimiu_iniciando_solucao)
+            {
+                printf("\nIniciando solucao...\n");
+                imprimiu_iniciando_solucao = true;
+            }
+
+            MovimentoCubo movimento = (indice < quantidade_embaralhamento)
+                ? embaralhamento[indice]
+                : solucao[indice - quantidade_embaralhamento];
+
+            InfoMovimento info = tabela_movimentos[movimento];
+            iniciarGiro(info.eixo, info.camada, info.sinal);
+
+            indice++;
+
+            if (indice == quantidade_embaralhamento)
+            {
+                proximoMovimentoEm = agora + 3.0;
+            }
+            else
+            {
+                proximoMovimentoEm = agora + 1.0;
+            }
+        }
+
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glLoadIdentity();
+
+        glTranslatef(0.0f, 0.0f, zoom);
+        glRotatef(camPitch, 1.0f, 0.0f, 0.0f);
+        glRotatef(camYaw, 0.0f, 1.0f, 0.0f);
+
+        for (int i = 0; i < (int)cubinhos.size(); i++)
+        {
+            glPushMatrix();
+            Vec3 pos = cubinhos[i].pos;
+            Mat3 orient = cubinhos[i].orient;
+
+            bool participa = girando && std::find(indicesGirando.begin(), indicesGirando.end(), i) != indicesGirando.end();
+
+            if (participa)
+            {
+                Mat3 parcial = matRotEixo(eixoGiro, sinalGiro * anguloAtual);
+                pos = mulMatVec(parcial, pos);
+                orient = mulMatMat(parcial, orient);
+            }
+
+            glTranslatef(pos.x * 0.5f, pos.y * 0.5f, pos.z * 0.5f);
+
+            float matrizGL[16] = {
+                orient.m[0][0], orient.m[1][0], orient.m[2][0], 0,
+                orient.m[0][1], orient.m[1][1], orient.m[2][1], 0,
+                orient.m[0][2], orient.m[1][2], orient.m[2][2], 0,
+                0,              0,              0,              1
+            };
+            glMultMatrixf(matrizGL);
 
             drawSubCube();
             glPopMatrix();
