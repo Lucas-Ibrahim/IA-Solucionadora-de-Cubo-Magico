@@ -8,21 +8,31 @@
     e depois DIR_INV faz o cubo voltar para o mesmo estado que estava antes.
 */
 
+//Pedro: Para IDDFS, precciso saber em qual profundidade aquele estado foi visitado, para evitar problema de dois estados iguais em profundidades diferentes, onde um estado fica como ja visitado por causa de outro estado
+//Ex:   estado X encontrado na profundidade 4 → rejeitado pelo limite
+//      estado X aparece depois na profundidade 2 → bloqueado como "já visitado" (isso nao deve acontecer)
+typedef struct {
+    EstadoCubo estado;
+    int profundidade;
+} EstadoVisitado;
+
+//Pedro: Troquei EstadoCubo *visitados por EstadoVisitado *visitados, e suas reações em cadeia
+
 /* verifica se o estado que foi gerado ja apareceu antes na busca */
-static int estado_ja_visitado(const EstadoCubo *estado, EstadoCubo *visitados, int quantidade)
+static int estado_ja_visitado(const EstadoCubo *estado, EstadoVisitado *visitados, int quantidade)
 {
     for (int i = 0; i < quantidade; i++)  /* percorre todos os estados que ja foram guardados */
     {
     
-        if (estado_igual(estado, &visitados[i])) /* compara o estado novo com um estado que ja visitamos */
+        if (estado_igual(estado, &visitados[i].estado)) /* compara o estado novo com um estado que ja visitamos */
         {
-            return 1; 
+            return i; 
         }
     }
-    return 0; 
+    return -1; 
 }
 
-static int adicionar_visitado(const EstadoCubo *estado, EstadoCubo **visitados, /* guarda um novo estado na lista de estados visitados*/
+static int adicionar_visitado(const EstadoCubo *estado, int profundidade, EstadoVisitado **visitados, /* guarda um novo estado na lista de estados visitados*/
                               int *quantidade, int *capacidade)
 {
     
@@ -30,9 +40,9 @@ static int adicionar_visitado(const EstadoCubo *estado, EstadoCubo **visitados, 
     {
         *capacidade = *capacidade * 2;
 
-        EstadoCubo *novo = realloc(
+        EstadoVisitado *novo = realloc(
             *visitados,
-            (*capacidade) * sizeof(EstadoCubo)
+            (*capacidade) * sizeof(EstadoVisitado)
         );
 
         if (novo == NULL) /* se nao conseguiu aumentar o vetor */
@@ -43,10 +53,28 @@ static int adicionar_visitado(const EstadoCubo *estado, EstadoCubo **visitados, 
         *visitados = novo;
     }
 
-    (*visitados)[*quantidade] = *estado; /* guarda o novo estado no vetor de visitados */
+    (*visitados)[*quantidade].estado = *estado; /* guarda o novo estado no vetor de visitados */
+    (*visitados)[*quantidade].profundidade = profundidade; // guarda profundidade do estado salvo
     (*quantidade)++;
 
     return 1;
+}
+
+static int deve_explorar (const EstadoCubo *estado, int profundidade, EstadoVisitado **visitados, int *quantidade, int *capacidade){
+    
+    int indice = estado_ja_visitado(estado, *visitados, *quantidade);
+
+    if (indice == -1){      //estado X nunca foi visitado (pode_explorar)
+        return adicionar_visitado(estado, profundidade, visitados, quantidade, capacidade);
+    }
+
+    //estado X já foi visitado, mas agora profundidade do estado é menor, portanto atualiza e permite explorar
+    if (profundidade < (*visitados)[indice].profundidade){      
+
+        (*visitados)[indice].profundidade = profundidade;
+        return 1;
+    }
+    return 0;   //estado X foi visitado e profundidade atual é maior que anterior (não eplorar)
 }
 
 ResultadoBusca laco_generico(const EstadoCubo *estado_inicial, InterfaceEstrutura *estrutura)
@@ -58,7 +86,7 @@ ResultadoBusca laco_generico(const EstadoCubo *estado_inicial, InterfaceEstrutur
     int capacidade_visitados = 100;
     int quantidade_visitados = 0;
 
-    EstadoCubo *visitados = malloc(capacidade_visitados * sizeof(EstadoCubo));
+    EstadoVisitado *visitados = malloc(capacidade_visitados * sizeof(EstadoVisitado));
 
     /* verifica se conseguiu criar o vetor */
     if (visitados == NULL)
@@ -66,7 +94,7 @@ ResultadoBusca laco_generico(const EstadoCubo *estado_inicial, InterfaceEstrutur
         return resultado;
     }
 
-    if (!adicionar_visitado(estado_inicial,&visitados,&quantidade_visitados,&capacidade_visitados)) /*  o estado inicial ja apareceu na busca, entao guardamos ele */
+    if (!adicionar_visitado(estado_inicial,0,&visitados,&quantidade_visitados,&capacidade_visitados)) /*  o estado inicial ja apareceu na busca, entao guardamos ele */
     {
         free(visitados);
         return resultado;
@@ -110,22 +138,22 @@ ResultadoBusca laco_generico(const EstadoCubo *estado_inicial, InterfaceEstrutur
                 
     for (int i = 0; i < TOTAL_MOVIMENTOS; i++) /* percorre cada um dos 12 sucessores gerados*/
     {
-    
-        if (!estado_ja_visitado(&sucessores[i].estado,visitados,quantidade_visitados)) /* verifica se esse estado ainda nao apareceu na busca */
-        {
-          if (adicionar_visitado(&sucessores[i].estado,&visitados,&quantidade_visitados,&capacidade_visitados)) /* se ainda nao apareceu, guarda ele nos estados visitados */
-            {
-             NoBusca *filho = (NoBusca *)malloc(sizeof(NoBusca)); /* cria um novo no para representar esse sucessor */
 
-               if (filho != NULL) /* verifica se conseguiu alocar memoria para o novo no */
-               {
+        int profundidade_filho = atual->profundidade + 1;
+    
+        if (deve_explorar(&sucessores[i].estado, profundidade_filho, &visitados, &quantidade_visitados, &capacidade_visitados)) /* verifica se esse estado ainda nao apareceu na busca */
+        {
+          
+            NoBusca *filho = (NoBusca *)malloc(sizeof(NoBusca)); /* cria um novo no para representar esse sucessor */
+
+            if (filho != NULL) /* verifica se conseguiu alocar memoria para o novo no */
+            {
                filho->estado = sucessores[i].estado;
                filho->movimento = sucessores[i].movimento;
                filho->pai = atual;
-               filho->profundidade = atual->profundidade + 1;
+               filho->profundidade = profundidade_filho;
 
               estrutura->inserir(estrutura->estrutura, filho); /* coloca o novo estado na estrutura da busca */
-               }
             }
         }
     }
