@@ -5,6 +5,15 @@
 #include <stdlib.h>
 #include "cubo_estado.h"
 
+/* 
+   Comentario do Lucas: deixei todas as funcoes como static aqui.
+   Isso porque quando mais de um arquivo .c inclui esse header no
+   mesmo programa, o corpo de cada funcao (que ta escrito aqui dentro
+   do .h) fica duplicado, e o linker da erro de funcao definida duas
+   vezes. Colocando static, cada funcao passa a valer so dentro do
+   arquivo que incluiu o header, entao para de dar esse erro. 
+*/
+
 typedef struct noBusca
 {
     EstadoCubo estado;
@@ -24,7 +33,7 @@ typedef struct Pilha
     No *Topo;
 } Pilha;
 
-Pilha* CriaPilha(void)
+static Pilha* CriaPilha(void)
 {
     Pilha *p;
     p = (Pilha*)malloc(sizeof(Pilha));
@@ -37,7 +46,7 @@ Pilha* CriaPilha(void)
     return p;
 }
 
-No* ins_ini(No* t, NoBusca *A)
+static No* ins_ini(No* t, NoBusca *A)
 {
     No* aux = (No*)malloc(sizeof(No));
     //verifica se alocou espaço
@@ -49,7 +58,7 @@ No* ins_ini(No* t, NoBusca *A)
     return aux;
 }
 
-int vaziaPilha(Pilha *p)
+static int vaziaPilha(Pilha *p)
 {
     if(p->Topo == NULL)
     {
@@ -61,7 +70,7 @@ int vaziaPilha(Pilha *p)
     }
 }
 
-void Push(Pilha* p, NoBusca *v)
+static void Push(Pilha* p, NoBusca *v)
 {
     No *novo = ins_ini(p->Topo, v);
 
@@ -70,14 +79,14 @@ void Push(Pilha* p, NoBusca *v)
     }
 }
 
-No* ret_ini(No* aux)
+static No* ret_ini(No* aux)
 {
     No* p = aux->prox;
     free(aux);
     return p;
 }
 
-NoBusca* Pop(Pilha* p)
+static NoBusca* Pop(Pilha* p)
 {
     NoBusca *v;
 
@@ -93,7 +102,7 @@ NoBusca* Pop(Pilha* p)
     return v;
 }
 
-Pilha* liberaPilha(Pilha* p)
+static Pilha* liberaPilha(Pilha* p)
 {
     No* aux;
     aux = p->Topo;
@@ -109,7 +118,7 @@ Pilha* liberaPilha(Pilha* p)
     return NULL;
 }
 
-void Imprime(Pilha* p)
+static void Imprime(Pilha* p)
 {
     if(vaziaPilha(p) == 1)
     {
@@ -136,7 +145,7 @@ typedef struct fila
     No *fim;
 } Fila;
 
-int VaziaFila(Fila* f)
+static int VaziaFila(Fila* f)
 {
     if(f->ini == NULL)
         return 1;
@@ -144,7 +153,7 @@ int VaziaFila(Fila* f)
     return 0;
 }
 
-Fila* CriaFila()
+static Fila* CriaFila()
 {
     Fila* f = (Fila*)malloc(sizeof(Fila));
 
@@ -156,7 +165,7 @@ Fila* CriaFila()
     return f;
 }
 
-No* ins_fim(No *fim, NoBusca *A)
+static No* ins_fim(No *fim, NoBusca *A)
 {
     No *p = (No*)malloc(sizeof(No));
 
@@ -169,7 +178,7 @@ No* ins_fim(No *fim, NoBusca *A)
     return p;
 }
 
-int InsereFila(Fila* f, NoBusca *v)
+static int InsereFila(Fila* f, NoBusca *v)
 {
     No *novo = ins_fim(f->fim, v);
 
@@ -186,14 +195,14 @@ int InsereFila(Fila* f, NoBusca *v)
     return 1;
 }
 
-No* retira_ini(No* ini)
+static No* retira_ini(No* ini)
 {
     No* p = ini->prox;
     free(ini);
     return p;
 }
 
-NoBusca* RetiraFila(Fila* f)
+static NoBusca* RetiraFila(Fila* f)
 {
     NoBusca *v;
 
@@ -214,7 +223,7 @@ NoBusca* RetiraFila(Fila* f)
     return v;
 }
 
-void imprimeFila(Fila* f)
+static void imprimeFila(Fila* f)
 {
     No* q;
 
@@ -226,7 +235,7 @@ void imprimeFila(Fila* f)
     printf("\n");
 }
 
-Fila* liberaFila(Fila* f)
+static Fila* liberaFila(Fila* f)
 {
     No* q = f->ini;
 
