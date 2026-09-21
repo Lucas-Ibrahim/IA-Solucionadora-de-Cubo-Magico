@@ -1,4 +1,15 @@
 #include "../include/cubo_estado.h"
+#include <stdlib.h>
+
+void estado_gerar_embaralhamento(unsigned int seed, MovimentoCubo *saida, int quantidade)
+{
+    srand(seed);
+
+    for (int i = 0; i < quantidade; i++)
+    {
+        saida[i] = (MovimentoCubo)(rand() % TOTAL_MOVIMENTOS);
+    }
+}
 
 void estado_inicializar(EstadoCubo *estado){
 

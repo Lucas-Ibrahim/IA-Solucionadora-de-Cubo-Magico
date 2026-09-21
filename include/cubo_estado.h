@@ -1,6 +1,10 @@
 #ifndef CUBO_ESTADO_H
 #define CUBO_ESTADO_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct {
     unsigned char pecas [8];
     unsigned char orientacao [8];
@@ -56,9 +60,14 @@ void estado_mov_trs(EstadoCubo *estado);
 void estado_mov_trs_inv(EstadoCubo *estado);
 
 void estado_aplicar_movimento(EstadoCubo *estado, MovimentoCubo movimento);
+void estado_gerar_embaralhamento(unsigned int seed, MovimentoCubo *saida, int quantidade);
 
 int estado_igual(const EstadoCubo *a, const EstadoCubo *b);
 
 void estado_gerar_sucessores(const EstadoCubo *estado, SucessorCubo sucessores[TOTAL_MOVIMENTOS]);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

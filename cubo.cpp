@@ -8,6 +8,8 @@
 #include <cmath>
 #include <vector>
 #include <algorithm>
+#include <chrono>
+#include <cstdio>
 
 const float PI = 3.14159265f;
 
@@ -63,7 +65,7 @@ Mat3 limparMat3(const Mat3& m) {
 }
 
 //Estado do Cubo
-struct Cubinho { Vec3 pos; Mat3 orient; }; 
+struct Cubinho { Vec3 pos; Mat3 orient; Vec3 origem; };
 std::vector<Cubinho> cubinhos;
 
 void inicializarCubo() {
@@ -71,7 +73,7 @@ void inicializarCubo() {
     for (float cx : {-1.0f, 1.0f})
         for (float cy : {-1.0f, 1.0f})
             for (float cz : {-1.0f, 1.0f})
-                cubinhos.push_back({ {cx, cy, cz}, matIdentidade() });
+                cubinhos.push_back({ {cx, cy, cz}, matIdentidade(), {cx, cy, cz} });
 }
 
 //Lógica de Animação de Giro
@@ -109,6 +111,28 @@ static const InfoMovimento tabela_movimentos[TOTAL_MOVIMENTOS] =
     /* MOV_TRS_INV */ {2, -1.0f, -1.0f},
 };
 
+const int QUANTIDADE_EMBARALHAMENTO_MANUAL = 12;
+std::vector<MovimentoCubo> embaralhamentoManual;
+int indiceEmbaralhamentoManual = 0;
+
+void iniciarEmbaralhamentoManual()
+{
+    if (!embaralhamentoManual.empty())
+    {
+        printf("\nO cubo ja esta sendo embaralhado.\n");
+        return;
+    }
+
+    unsigned int seed = (unsigned int)std::chrono::high_resolution_clock::now()
+        .time_since_epoch().count();
+
+    embaralhamentoManual.resize(QUANTIDADE_EMBARALHAMENTO_MANUAL);
+    estado_gerar_embaralhamento(seed, embaralhamentoManual.data(), QUANTIDADE_EMBARALHAMENTO_MANUAL);
+    indiceEmbaralhamentoManual = 0;
+
+    printf("\nEmbaralhando o cubo (seed %u)...\n", seed);
+}
+
 void iniciarGiro(int eixo, float camada, float sinal) { 
     if (girando) return; // Impede girar duas coisas ao mesmo tempo
     eixoGiro = eixo; valorCamada = camada; sinalGiro = sinal; anguloAtual = 0; girando = true;
@@ -133,7 +157,9 @@ void atualizarGiro(float dt) {
 }
 
 //Controles de Câmera e Teclado
-float camPitch = 20.0f, camYaw = -30.0f, zoom = -4.0f; 
+float camPitch = 20.0f, camYaw = -30.0f, zoom = -5.5f;
+const float DESLOCAMENTO_CAMERA_X = 0.1f;
+const float DESLOCAMENTO_CAMERA_Y = 0.2f;
 bool arrastando = false;
 double ultimoX = 0, ultimoY = 0;
 
@@ -165,6 +191,7 @@ void keyCallback(GLFWwindow* janela, int tecla, int scancode, int acao, int mods
         case GLFW_KEY_D: iniciarGiro(1, -1.0f, inv ? -1 :  1); break; // Baixo (Eixo Y negativo)
         case GLFW_KEY_C: iniciarGiro(2,  1.0f, inv ?  1 : -1); break; // Frente (Eixo Z positivo)
         case GLFW_KEY_V: iniciarGiro(2, -1.0f, inv ? -1 :  1); break; // Tras (Eixo Z negativo)
+        case GLFW_KEY_B: iniciarEmbaralhamentoManual(); break;
     }
 }
 
@@ -179,29 +206,76 @@ void keyCallbackSaida(GLFWwindow* janela, int tecla, int scancode, int acao, int
 }
 
 //Desenho OpenGL Fixo
-void drawSubCube() {
-    float s = 0.48f; 
+void drawSubCube(const Vec3& origem) {
+    float s = 0.48f;
+    float preto[3] = {0.05f, 0.05f, 0.05f};
+
     glBegin(GL_QUADS);
-    glColor3f(1.0f, 0.0f, 0.0f); glVertex3f(-s,-s, s); glVertex3f( s,-s, s); glVertex3f( s, s, s); glVertex3f(-s, s, s);
-    glColor3f(1.0f, 0.5f, 0.0f); glVertex3f(-s,-s,-s); glVertex3f(-s, s,-s); glVertex3f( s, s,-s); glVertex3f( s,-s,-s);
-    glColor3f(1.0f, 1.0f, 1.0f); glVertex3f(-s, s,-s); glVertex3f(-s, s, s); glVertex3f( s, s, s); glVertex3f( s, s,-s);
-    glColor3f(1.0f, 1.0f, 0.0f); glVertex3f(-s,-s,-s); glVertex3f( s,-s,-s); glVertex3f( s,-s, s); glVertex3f(-s,-s, s);
-    glColor3f(0.0f, 1.0f, 0.0f); glVertex3f(-s,-s,-s); glVertex3f(-s,-s, s); glVertex3f(-s, s, s); glVertex3f(-s, s,-s);
-    glColor3f(0.0f, 0.0f, 1.0f); glVertex3f( s,-s,-s); glVertex3f( s, s,-s); glVertex3f( s, s, s); glVertex3f( s,-s, s);
+    if (origem.z > 0) glColor3f(1.0f, 0.0f, 0.0f); else glColor3fv(preto);
+    glVertex3f(-s,-s, s); glVertex3f( s,-s, s); glVertex3f( s, s, s); glVertex3f(-s, s, s);
+
+    if (origem.z < 0) glColor3f(1.0f, 0.5f, 0.0f); else glColor3fv(preto);
+    glVertex3f(-s,-s,-s); glVertex3f(-s, s,-s); glVertex3f( s, s,-s); glVertex3f( s,-s,-s);
+
+    if (origem.y > 0) glColor3f(1.0f, 1.0f, 1.0f); else glColor3fv(preto);
+    glVertex3f(-s, s,-s); glVertex3f(-s, s, s); glVertex3f( s, s, s); glVertex3f( s, s,-s);
+
+    if (origem.y < 0) glColor3f(1.0f, 1.0f, 0.0f); else glColor3fv(preto);
+    glVertex3f(-s,-s,-s); glVertex3f( s,-s,-s); glVertex3f( s,-s, s); glVertex3f(-s,-s, s);
+
+    if (origem.x < 0) glColor3f(0.0f, 1.0f, 0.0f); else glColor3fv(preto);
+    glVertex3f(-s,-s,-s); glVertex3f(-s,-s, s); glVertex3f(-s, s, s); glVertex3f(-s, s,-s);
+
+    if (origem.x > 0) glColor3f(0.0f, 0.0f, 1.0f); else glColor3fv(preto);
+    glVertex3f( s,-s,-s); glVertex3f( s, s,-s); glVertex3f( s, s, s); glVertex3f( s,-s, s);
     glEnd();
+}
+
+void configurarProjecao(GLFWwindow* window)
+{
+    int largura, altura;
+    glfwGetFramebufferSize(window, &largura, &altura);
+    if (altura < 1) altura = 1;
+
+    glViewport(0, 0, largura, altura);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    float aspect = (float)largura / (float)altura;
+    glFrustum(-aspect * 0.5f, aspect * 0.5f, -0.5f, 0.5f, 1.0f, 50.0f);
+    glMatrixMode(GL_MODELVIEW);
 }
 
 void abrir_jogo_manual() 
 {
     girando = false;
     inicializarCubo();
+    embaralhamentoManual.clear();
+    indiceEmbaralhamentoManual = 0;
+
+    printf("\n=== MODO: BUSCA MANUAL ===\n");
+    printf("Controles:\n");
+    printf("  R      -> gira face Direita\n");
+    printf("  Shift+R-> gira face Direita (sentido contrario)\n");
+    printf("  E      -> gira face Esquerda\n");
+    printf("  Shift+E-> gira face Esquerda (sentido contrario)\n");
+    printf("  F      -> gira face Superior\n");
+    printf("  Shift+F-> gira face Superior (sentido contrario)\n");
+    printf("  D      -> gira face Inferior\n");
+    printf("  Shift+D-> gira face Inferior (sentido contrario)\n");
+    printf("  C      -> gira face Frontal\n");
+    printf("  Shift+C-> gira face Frontal (sentido contrario)\n");
+    printf("  V      -> gira face Posterior\n");
+    printf("  Shift+V-> gira face Posterior (sentido contrario)\n");
+    printf("  B      -> embaralha o cubo automaticamente\n");
+    printf("  Mouse (arrastar) -> gira a camera\n");
+    printf("  ESC    -> volta ao menu\n\n");
 
     if (!glfwInit()) 
     {
         return;
     }
 
-    GLFWwindow* window = glfwCreateWindow(800, 600, "Cubo Animado - R, E, F, D", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(800, 600, "Cubo Magico 2x2x2 - Busca Manual", NULL, NULL);
     
     if (!window)
     { 
@@ -218,11 +292,7 @@ void abrir_jogo_manual()
 
     glEnable(GL_DEPTH_TEST);
 
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    float aspect = 800.0f / 600.0f;
-    glFrustum(-aspect * 0.5f, aspect * 0.5f, -0.5f, 0.5f, 1.0f, 50.0f);
-    glMatrixMode(GL_MODELVIEW);
+    configurarProjecao(window);
 
     double tempoAnterior = glfwGetTime();
 
@@ -233,11 +303,25 @@ void abrir_jogo_manual()
         
         atualizarGiro(dt); // Atualiza os ângulos da animação se algo estiver girando
 
+        if (!girando && indiceEmbaralhamentoManual < (int)embaralhamentoManual.size())
+        {
+            MovimentoCubo movimento = embaralhamentoManual[indiceEmbaralhamentoManual++];
+            InfoMovimento info = tabela_movimentos[movimento];
+            iniciarGiro(info.eixo, info.camada, info.sinal);
+        }
+        else if (!girando && !embaralhamentoManual.empty())
+        {
+            embaralhamentoManual.clear();
+            indiceEmbaralhamentoManual = 0;
+            printf("Cubo embaralhado!\n");
+        }
+
+        configurarProjecao(window);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glLoadIdentity();
 
         // Controla a câmera
-        glTranslatef(0.0f, 0.0f, zoom);
+        glTranslatef(DESLOCAMENTO_CAMERA_X, DESLOCAMENTO_CAMERA_Y, zoom);
         glRotatef(camPitch, 1.0f, 0.0f, 0.0f);
         glRotatef(camYaw, 0.0f, 1.0f, 0.0f);
 
@@ -267,7 +351,7 @@ void abrir_jogo_manual()
             };
             glMultMatrixf(matrizGL); // Aplica a rotação do estado
 
-            drawSubCube();
+            drawSubCube(cubinhos[i].origem);
             glPopMatrix();
         }
 
@@ -305,11 +389,7 @@ void abrir_visualizacao_solucao(MovimentoCubo *embaralhamento, int quantidade_em
 
     glEnable(GL_DEPTH_TEST);
 
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    float aspect = 800.0f / 600.0f;
-    glFrustum(-aspect * 0.5f, aspect * 0.5f, -0.5f, 0.5f, 1.0f, 50.0f);
-    glMatrixMode(GL_MODELVIEW);
+    configurarProjecao(window);
 
     printf("\nAperte ESC a qualquer momento para fechar e voltar ao menu.\n");
     printf("\nEmbaralhando...\n");
@@ -376,10 +456,11 @@ void abrir_visualizacao_solucao(MovimentoCubo *embaralhamento, int quantidade_em
             }
         }
 
+        configurarProjecao(window);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glLoadIdentity();
 
-        glTranslatef(0.0f, 0.0f, zoom);
+        glTranslatef(DESLOCAMENTO_CAMERA_X, DESLOCAMENTO_CAMERA_Y, zoom);
         glRotatef(camPitch, 1.0f, 0.0f, 0.0f);
         glRotatef(camYaw, 0.0f, 1.0f, 0.0f);
 
@@ -408,7 +489,7 @@ void abrir_visualizacao_solucao(MovimentoCubo *embaralhamento, int quantidade_em
             };
             glMultMatrixf(matrizGL);
 
-            drawSubCube();
+            drawSubCube(cubinhos[i].origem);
             glPopMatrix();
         }
 

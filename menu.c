@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <locale.h>
-#include <time.h>
 // #include "bibliofilaepilha.h"
 #include "cubo_visual.h"
 #include "busca_bfs.h"
@@ -53,11 +52,35 @@ const char *nome_movimento(MovimentoCubo movimento)
     }
 }
 
+// Mantem o mesmo embaralhamento nas duas buscas quando a seed e repetida.
+#define QUANTIDADE_EMBARALHAMENTO 4
+
+static int preparar_embaralhamento(EstadoCubo *cubo, MovimentoCubo embaralhamento[QUANTIDADE_EMBARALHAMENTO])
+{
+    unsigned int seed;
+    printf("\nDigite a seed do embaralhamento: ");
+    if (scanf("%u", &seed) != 1)
+    {
+        printf("Seed invalida.\n");
+        return 0;
+    }
+
+    estado_inicializar(cubo);
+    estado_gerar_embaralhamento(seed, embaralhamento, QUANTIDADE_EMBARALHAMENTO);
+    printf("Embaralhamento (seed %u):", seed);
+    for (int i = 0; i < QUANTIDADE_EMBARALHAMENTO; i++)
+    {
+        estado_aplicar_movimento(cubo, embaralhamento[i]);
+        printf(" %s", nome_movimento(embaralhamento[i]));
+    }
+    printf("\n");
+    return 1;
+}
+
 int main()
 {
     int opcao;
 
-    srand(time(NULL));
     setlocale(LC_ALL, "Portuguese");
 
     do
@@ -100,16 +123,9 @@ int main()
         {
             EstadoCubo cubo;
 
-            estado_inicializar(&cubo);
-
-            // guarda o embaralhamento num array, pra poder tanto aplicar no estado logico quanto reaproveitar depois na animacao
-            MovimentoCubo embaralhamento[] = {MOV_DIR, MOV_SUP, MOV_FRT};
-            int quantidade_embaralhamento = 3;
-
-            for (int i = 0; i < quantidade_embaralhamento; i++)
-            {
-                estado_aplicar_movimento(&cubo, embaralhamento[i]);
-            }
+            MovimentoCubo embaralhamento[QUANTIDADE_EMBARALHAMENTO];
+            int quantidade_embaralhamento = QUANTIDADE_EMBARALHAMENTO;
+            if (!preparar_embaralhamento(&cubo, embaralhamento)) break;
 
             printf("\nIniciando Busca em Largura...\n");
 
@@ -146,15 +162,9 @@ int main()
         {
             EstadoCubo cubo;
 
-            estado_inicializar(&cubo);
-
-            MovimentoCubo embaralhamento[] = {MOV_DIR, MOV_SUP, MOV_FRT};
-            int quantidade_embaralhamento = 3;
-
-            for (int i = 0; i < quantidade_embaralhamento; i++)
-            {
-                estado_aplicar_movimento(&cubo, embaralhamento[i]);
-            }
+            MovimentoCubo embaralhamento[QUANTIDADE_EMBARALHAMENTO];
+            int quantidade_embaralhamento = QUANTIDADE_EMBARALHAMENTO;
+            if (!preparar_embaralhamento(&cubo, embaralhamento)) break;
 
             printf("\nIniciando Busca em Profundidade Limitada Iterativa...\n");
 
