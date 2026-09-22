@@ -1,21 +1,17 @@
 #include "busca_astar.h"
 #include "biblioteca_fila_pilha.h"
 
-static int heuristica(
-    const EstadoCubo *estado)
+static int heuristica(const EstadoCubo *estado)
 {
-    int h = 0;
-
-    for(int i = 0; i < 8; i++)
+    int errado = 0;
+   
+    for (int i = 0; i < 8; i++)
     {
-        if(estado->pecas[i] != i)
-            h++;
-
-        if(estado->orientacao[i] != 0)
-            h++;
+        if (estado->pecas[i] != i || estado->orientacao[i] != 0)
+            errado++;
     }
-
-    return h;
+   
+    return (errado + 3) / 4;
 }
 
 static void astar_inserir(

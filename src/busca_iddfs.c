@@ -52,6 +52,7 @@ ResultadoBusca busca_iddfs(
     // Inicialmente nenhuma solução foi encontrada
     resultado.no_final = NULL;
     resultado.estados_visitados = 0;
+    resultado.todos_nos = NULL;
 
     // IDDFS: começa no limite 0 e aumenta até limite_maximo
     for(int limite = 0; limite <= limite_maximo; limite++){
@@ -80,19 +81,22 @@ ResultadoBusca busca_iddfs(
         ResultadoBusca tentativa = laco_generico(estado_inicial, &estrutura);
 
         // Como o IDDFS repete os níveis anteriores, salva os estados em todas as tentativas
-        resultado.estados_visitados += tentativa.estados_visitados;
-
-        // Libera a pilha depois da tentativa
-        liberaPilha(pilha);
+                resultado.estados_visitados += tentativa.estados_visitados;
 
         // Se encontrou solução nesse limite, encerra a IDDFS
-        if(tentativa.no_final != NULL){
+        if(tentativa.no_final != NULL)
+        {
 
-            resultado.no_final =
-                tentativa.no_final;
+            resultado.no_final = tentativa.no_final;
+            resultado.todos_nos = tentativa.todos_nos; // guarda pra liberar depois, no menu.c
 
+            liberaPilha(pilha);
             return resultado;
         }
+
+        // essa tentativa nao achou solucao nesse limite, libera os nos dela agora
+        liberar_nos(tentativa.todos_nos);
+        liberaPilha(pilha);
     }
 
     // Nenhuma solução encontrada

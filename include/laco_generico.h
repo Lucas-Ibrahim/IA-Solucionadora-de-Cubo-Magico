@@ -12,12 +12,25 @@ typedef struct
 
 }InterfaceEstrutura; // essa estrutura vai servir pra gente deixar ela universal, entao independentemente se for fila, pilha ou outra o laco generico vai funcionar de forma igual pra todas sem oprecisar adaptar ele
 
-typedef struct {
+// criei essa estrutura para liberar todos os nós da memoria depois de terminar a busca
+typedef struct ListaNos
+{ 
+    NoBusca *no;
+   struct ListaNos *prox;
+
+} ListaNos;
+
+typedef struct 
+{
     NoBusca *no_final; // guarda o no onde a busca terminou
     int estados_visitados; // conta quantos estados foram visitados
+    ListaNos *todos_nos; 
+
 } ResultadoBusca;
 
 ResultadoBusca laco_generico(const EstadoCubo *estado_inicial, InterfaceEstrutura *estrutura); // declarando a funcao do laco generico
+
+void liberar_nos(ListaNos *lista);
 
 int busca_reconstruir_caminho(NoBusca *no_final, MovimentoCubo *saida, int capacidade); // funcao que quando o algoritmo acha o camiho da solucao, ela guarda todos os movimentos pra gente conseguir mostrar a solucao com o cubo mexendo
 

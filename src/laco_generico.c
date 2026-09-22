@@ -11,12 +11,27 @@
 //Pedro: Para IDDFS, precciso saber em qual profundidade aquele estado foi visitado, para evitar problema de dois estados iguais em profundidades diferentes, onde um estado fica como ja visitado por causa de outro estado
 //Ex:   estado X encontrado na profundidade 4 → rejeitado pelo limite
 //      estado X aparece depois na profundidade 2 → bloqueado como "já visitado" (isso nao deve acontecer)
-typedef struct {
+typedef struct 
+{
     EstadoCubo estado;
     int profundidade;
 } EstadoVisitado;
 
 //Pedro: Troquei EstadoCubo *visitados por EstadoVisitado *visitados, e suas reações em cadeia
+
+static ListaNos *registrar_no(ListaNos *lista, NoBusca *no)
+{
+    ListaNos *novo = malloc(sizeof(ListaNos));
+
+    if (novo == NULL) 
+    {
+        return lista; // se falhar aqui, so nao rastreia esse (nao trava o programa)
+    }
+   
+    novo->no = no;
+    novo->prox = lista;
+    return novo;
+}
 
 /* verifica se o estado que foi gerado ja apareceu antes na busca */
 static int estado_ja_visitado(const EstadoCubo *estado, EstadoVisitado *visitados, int quantidade)
@@ -81,12 +96,14 @@ ResultadoBusca laco_generico(const EstadoCubo *estado_inicial, InterfaceEstrutur
 {
     ResultadoBusca resultado; /* variavel pra devolver a funcao ao final */
     resultado.no_final = NULL; /* inicializa as variaveis pois ainda nao inciou o laco */
+    resultado.todos_nos = NULL; 
     resultado.estados_visitados = 0;
 
     int capacidade_visitados = 100;
     int quantidade_visitados = 0;
 
     EstadoVisitado *visitados = malloc(capacidade_visitados * sizeof(EstadoVisitado));
+     ListaNos *todos = NULL;
 
     /* verifica se conseguiu criar o vetor */
     if (visitados == NULL)
@@ -111,6 +128,7 @@ ResultadoBusca laco_generico(const EstadoCubo *estado_inicial, InterfaceEstrutur
     no_inicial->estado = *estado_inicial; // estado de inicio pega o parametro que enviamos para iniciar a busca
     no_inicial->pai = NULL; // nao tem "pai" o inicio
     no_inicial->profundidade = 0; // ainda nao fizemos movimentos entao comeca zerado
+    todos = registrar_no(todos, no_inicial);
 
     // Adicionar estado na estrutura 
     estrutura->inserir(estrutura->estrutura, no_inicial);
@@ -127,6 +145,7 @@ ResultadoBusca laco_generico(const EstadoCubo *estado_inicial, InterfaceEstrutur
         {
             // Se estado final -> mostrar solucao e encerrar
             resultado.no_final = atual;
+            resultado.todos_nos = todos;
             free(visitados);
             return resultado;
         }
@@ -154,6 +173,7 @@ ResultadoBusca laco_generico(const EstadoCubo *estado_inicial, InterfaceEstrutur
                filho->profundidade = profundidade_filho;
 
               estrutura->inserir(estrutura->estrutura, filho); /* coloca o novo estado na estrutura da busca */
+              todos = registrar_no(todos, filho);
             }
         }
     }
@@ -161,6 +181,7 @@ ResultadoBusca laco_generico(const EstadoCubo *estado_inicial, InterfaceEstrutur
 } // fecha o while
 
     // chegou aqui se a estrutura ficou vazia sem encontrar solucao
+    resultado.todos_nos = todos;
     free(visitados);
 
     return resultado;
@@ -190,4 +211,15 @@ int busca_reconstruir_caminho(NoBusca *no_final, MovimentoCubo *saida, int capac
     }
 
     return quantidade;
+}
+
+void liberar_nos(ListaNos *lista)
+{
+    while (lista != NULL)
+    {
+        ListaNos *prox = lista->prox;
+        free(lista->no);
+        free(lista);
+        lista = prox;
+    }
 }

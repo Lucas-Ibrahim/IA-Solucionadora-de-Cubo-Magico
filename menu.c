@@ -105,7 +105,7 @@ int main()
         printf("\t\t\t|                                                                          |\n");
         printf("\t\t\t|                        3 - Busca em Profundidade                         |\n");
         printf("\t\t\t|                                                                          |\n");
-        printf("\t\t\t|                          4 - Busca Heur�stica                            |\n");
+        printf("\t\t\t|                          4 - Busca Heuristica                           |\n");
         printf("\t\t\t|                                                                          |\n");
         printf("\t\t\t|                                5 - Sair                                  |\n");
         printf("\t\t\t|                                                                          |\n");
@@ -126,7 +126,8 @@ int main()
 
             MovimentoCubo embaralhamento[QUANTIDADE_EMBARALHAMENTO];
             int quantidade_embaralhamento = QUANTIDADE_EMBARALHAMENTO;
-            if (!preparar_embaralhamento(&cubo, embaralhamento)) break;
+            if (!preparar_embaralhamento(&cubo, embaralhamento))
+                break;
 
             printf("\nIniciando Busca em Largura...\n");
 
@@ -140,7 +141,7 @@ int main()
                 MovimentoCubo caminho[20];
 
                 int quantidade = busca_reconstruir_caminho(resultado.no_final, caminho, 20);
-
+                liberar_nos(resultado.todos_nos);
                 printf("Quantidade de movimentos: %d\n", quantidade);
 
                 for (int i = 0; i < quantidade; i++)
@@ -165,7 +166,8 @@ int main()
 
             MovimentoCubo embaralhamento[QUANTIDADE_EMBARALHAMENTO];
             int quantidade_embaralhamento = QUANTIDADE_EMBARALHAMENTO;
-            if (!preparar_embaralhamento(&cubo, embaralhamento)) break;
+            if (!preparar_embaralhamento(&cubo, embaralhamento))
+                break;
 
             printf("\nIniciando Busca em Profundidade Limitada Iterativa...\n");
 
@@ -177,9 +179,9 @@ int main()
                 printf("Estados analisados: %d\n", resultado.estados_visitados);
 
                 MovimentoCubo caminho[20];
-
+                
                 int quantidade = busca_reconstruir_caminho(resultado.no_final, caminho, 20);
-
+                liberar_nos(resultado.todos_nos);
                 printf("Quantidade de movimentos: %d\n", quantidade);
 
                 for (int i = 0; i < quantidade; i++)
@@ -198,71 +200,72 @@ int main()
         }
 
         case 4:
-{
-    EstadoCubo cubo;
-
-    MovimentoCubo embaralhamento[
-        QUANTIDADE_EMBARALHAMENTO];
-
-    int quantidade_embaralhamento =
-        QUANTIDADE_EMBARALHAMENTO;
-
-    if (!preparar_embaralhamento(
-            &cubo,
-            embaralhamento))
-        break;
-
-    printf(
-        "\nIniciando Busca Heuristica...\n");
-
-    ResultadoBusca resultado =
-        busca_astar(&cubo);
-
-    if (resultado.no_final != NULL)
-    {
-        printf(
-            "\nSolucao encontrada!\n");
-
-        printf(
-            "Estados analisados: %d\n",
-            resultado.estados_visitados);
-
-        MovimentoCubo caminho[20];
-
-        int quantidade =
-            busca_reconstruir_caminho(
-                resultado.no_final,
-                caminho,
-                20);
-
-        printf(
-            "Quantidade de movimentos: %d\n",
-            quantidade);
-
-        for (int i = 0;
-             i < quantidade;
-             i++)
         {
+            EstadoCubo cubo;
+
+            MovimentoCubo embaralhamento[QUANTIDADE_EMBARALHAMENTO];
+
+            int quantidade_embaralhamento =
+                QUANTIDADE_EMBARALHAMENTO;
+
+            if (!preparar_embaralhamento(
+                    &cubo,
+                    embaralhamento))
+                break;
+
             printf(
-                "Movimento %d: %s\n",
-                i + 1,
-                nome_movimento(caminho[i]));
+                "\nIniciando Busca Heuristica...\n");
+
+            ResultadoBusca resultado =
+                busca_astar(&cubo);
+
+            if (resultado.no_final != NULL)
+            {
+                printf(
+                    "\nSolucao encontrada!\n");
+
+                printf(
+                    "Estados analisados: %d\n",
+                    resultado.estados_visitados);
+
+                MovimentoCubo caminho[20];
+
+                int quantidade =
+                    busca_reconstruir_caminho(
+                        resultado.no_final,
+                        caminho,
+                        20);
+                
+                liberar_nos(resultado.todos_nos);
+
+                printf(
+                    "Quantidade de movimentos: %d\n",
+                    quantidade);
+
+                for (int i = 0;
+                     i < quantidade;
+                     i++)
+                {
+                    printf(
+                        "Movimento %d: %s\n",
+                        i + 1,
+                        nome_movimento(caminho[i]));
+                }
+
+                abrir_visualizacao_solucao(
+                    embaralhamento,
+                    quantidade_embaralhamento,
+                    caminho,
+                    quantidade);
+            }
+            else
+            {
+                printf(
+                    "\nNao foi encontrada uma solucao.\n");
+            }
+
+            break;
         }
-
-        abrir_visualizacao_solucao(
-            embaralhamento,
-            quantidade_embaralhamento,
-            caminho,
-            quantidade);
-    }
-    else
-    {
-        printf(
-            "\nNao foi encontrada uma solucao.\n");
-    }
-
-    break;
-}
 
         case 5:
             printf("\nSaindo...\n");
