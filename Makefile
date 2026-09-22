@@ -19,7 +19,9 @@ endif
 # lista de todos os .o que o executavel final precisa
 # cada busca (bfs, iddfs, e depois a*) mais o laco generico e o estado do cubo
 # viram um .o separado, e no final o g++ linka tudo junto
-OBJS = menu.o cubo.o laco_generico.o cubo_estado.o busca_bfs.o busca_iddfs.o
+OBJS = menu.o cubo.o laco_generico.o \
+       cubo_estado.o busca_bfs.o \
+       busca_iddfs.o busca_astar.o
 
 all: $(SIMULADOR)
 
@@ -43,6 +45,9 @@ busca_bfs.o: src/busca_bfs.c include/busca_bfs.h
 
 busca_iddfs.o: src/busca_iddfs.c include/busca_iddfs.h
 	gcc $(CFLAGS) -c src/busca_iddfs.c -o busca_iddfs.o
+
+busca_astar.o: src/busca_astar.c include/busca_astar.h
+	gcc $(CFLAGS) -c src/busca_astar.c -o busca_astar.o
 
 clean:
 	rm -f *.o $(SIMULADOR)

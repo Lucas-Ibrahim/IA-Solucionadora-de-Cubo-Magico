@@ -6,6 +6,7 @@
 #include "cubo_visual.h"
 #include "busca_bfs.h"
 #include "busca_iddfs.h"
+#include "busca_astar.h"
 
 const char *nome_movimento(MovimentoCubo movimento)
 {
@@ -197,7 +198,71 @@ int main()
         }
 
         case 4:
-            break;
+{
+    EstadoCubo cubo;
+
+    MovimentoCubo embaralhamento[
+        QUANTIDADE_EMBARALHAMENTO];
+
+    int quantidade_embaralhamento =
+        QUANTIDADE_EMBARALHAMENTO;
+
+    if (!preparar_embaralhamento(
+            &cubo,
+            embaralhamento))
+        break;
+
+    printf(
+        "\nIniciando Busca Heuristica...\n");
+
+    ResultadoBusca resultado =
+        busca_astar(&cubo);
+
+    if (resultado.no_final != NULL)
+    {
+        printf(
+            "\nSolucao encontrada!\n");
+
+        printf(
+            "Estados analisados: %d\n",
+            resultado.estados_visitados);
+
+        MovimentoCubo caminho[20];
+
+        int quantidade =
+            busca_reconstruir_caminho(
+                resultado.no_final,
+                caminho,
+                20);
+
+        printf(
+            "Quantidade de movimentos: %d\n",
+            quantidade);
+
+        for (int i = 0;
+             i < quantidade;
+             i++)
+        {
+            printf(
+                "Movimento %d: %s\n",
+                i + 1,
+                nome_movimento(caminho[i]));
+        }
+
+        abrir_visualizacao_solucao(
+            embaralhamento,
+            quantidade_embaralhamento,
+            caminho,
+            quantidade);
+    }
+    else
+    {
+        printf(
+            "\nNao foi encontrada uma solucao.\n");
+    }
+
+    break;
+}
 
         case 5:
             printf("\nSaindo...\n");

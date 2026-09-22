@@ -18,7 +18,11 @@ typedef struct noBusca
 {
     EstadoCubo estado;
     MovimentoCubo movimento;
+    
     int profundidade;
+
+    int f;
+    
     struct noBusca *pai;
 } NoBusca;
 
@@ -138,7 +142,6 @@ static void Imprime(Pilha* p)
 }
 
 
-
 typedef struct fila
 {
     No *ini;
@@ -247,6 +250,99 @@ static Fila* liberaFila(Fila* f)
     }
 
     free(f);
+    return NULL;
+}
+
+typedef struct prioridade
+{
+    No *ini;
+} FilaPrioridade;
+
+static FilaPrioridade *CriaFilaPrioridade()
+{
+    FilaPrioridade *f =
+        (FilaPrioridade*)malloc(sizeof(FilaPrioridade));
+
+    if(f == NULL)
+        return NULL;
+
+    f->ini = NULL;
+
+    return f;
+}
+
+static int VaziaFilaPrioridade(FilaPrioridade *f)
+{
+    return f->ini == NULL;
+}
+
+static void InserirPrioridade(
+    FilaPrioridade *f,
+    NoBusca *novo)
+{
+    No *n = (No*)malloc(sizeof(No));
+
+    n->info = novo;
+    n->prox = NULL;
+
+    if(f->ini == NULL)
+    {
+        f->ini = n;
+        return;
+    }
+
+    if(novo->f < f->ini->info->f)
+    {
+        n->prox = f->ini;
+        f->ini = n;
+        return;
+    }
+
+    No *atual = f->ini;
+
+    while(atual->prox != NULL &&
+          atual->prox->info->f <= novo->f)
+    {
+        atual = atual->prox;
+    }
+
+    n->prox = atual->prox;
+    atual->prox = n;
+}
+
+static NoBusca *RetirarPrioridade(
+    FilaPrioridade *f)
+{
+    if(f->ini == NULL)
+        return NULL;
+
+    No *aux = f->ini;
+
+    NoBusca *retorno = aux->info;
+
+    f->ini = aux->prox;
+
+    free(aux);
+
+    return retorno;
+}
+
+static FilaPrioridade *
+LiberaFilaPrioridade(FilaPrioridade *f)
+{
+    No *atual = f->ini;
+
+    while(atual != NULL)
+    {
+        No *prox = atual->prox;
+
+        free(atual);
+
+        atual = prox;
+    }
+
+    free(f);
+
     return NULL;
 }
 
